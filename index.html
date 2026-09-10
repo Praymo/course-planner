@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="description" content="CFI课程规划工具：拖拽排课、校区教室、时间冲突提醒。非官方，数据仅为历史快照。" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CFI DIY 选课沙盘</title>
+  <style>
+    :root{--bg:#f4f7fb;--ink:#172033;--muted:#687386;--line:#dce3ee;--brand:#2457d6;--danger:#c8344b;--warn:#bd6b00;--ok:#12805c;--slot:52px}
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",sans-serif}
+    header{padding:20px 24px 14px;background:#fff;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:16px;align-items:flex-start}
+    h1{font-size:22px;margin:0 0 5px}.sub{color:var(--muted)} button{font:inherit;cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:9px;padding:8px 12px}.primary{background:var(--brand);color:#fff;border-color:var(--brand)}
+    .layout{display:grid;grid-template-columns:320px minmax(720px,1fr);gap:16px;padding:16px;align-items:start}.panel{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 3px 12px #1e31500c}
+    aside{padding:14px;position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}.panel h2{font-size:16px;margin:0 0 10px}.filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.filter.active{background:#eaf0ff;border-color:#9ab3f4;color:#163f9d}.course{padding:10px;border:1px solid var(--line);border-radius:10px;margin:8px 0;background:#fff;cursor:grab}.course:hover{border-color:#91a8db;box-shadow:0 3px 10px #31518613}.course[draggable=true]:active{cursor:grabbing}.course.used{opacity:.38}.code{font-weight:750}.name{font-weight:650;margin:2px 0}.meta{font-size:12px;color:var(--muted)}.tag{display:inline-block;padding:2px 6px;border-radius:99px;background:#edf1f7;margin-right:4px}.required{background:#fff0df;color:#9a5100}.elective{background:#e9f6ef;color:#08704f}.uncertain{background:#fff2f4;color:#a12b40}.detail-hint{float:right;color:var(--brand);font-size:11px;font-weight:700}.course.has-detail:hover .detail-hint{text-decoration:underline}
+    .rules{padding:13px 14px;border-bottom:1px solid var(--line);display:flex;gap:16px;align-items:center;flex-wrap:wrap}.rules label{display:flex;gap:6px;align-items:center}.rules input[type=number]{width:58px;padding:5px;border:1px solid var(--line);border-radius:6px}.stats{margin-left:auto;display:flex;gap:12px;font-weight:650}.stat b{color:var(--brand)}
+    .alerts{padding:10px 14px;min-height:43px;border-bottom:1px solid var(--line)}.alert{margin:3px 0}.alert.bad{color:var(--danger)}.alert.warn{color:var(--warn)}.alert.ok{color:var(--ok)}
+    .calendar-wrap{overflow:auto;padding:0 12px 12px}.calendar{min-width:930px;display:grid;grid-template-columns:58px repeat(7,1fr);grid-template-rows:42px repeat(28,26px);position:relative}.day,.time{position:sticky;background:#fff;z-index:2}.day{top:0;text-align:center;padding:11px 2px;border-bottom:1px solid var(--line);font-weight:700}.time{left:0;text-align:right;padding:0 8px;color:var(--muted);font-size:11px;border-right:1px solid var(--line);transform:translateY(-7px)}.gridcell{border-right:1px solid #edf0f5;border-bottom:1px solid #f0f2f6;min-height:26px}.gridcell.hour{border-bottom-color:#d9e0eb}.dropzone.dragover{background:#eef4ff}
+    .event{z-index:4;margin:2px 4px;border-radius:8px;padding:7px 8px;color:#fff;overflow:hidden;box-shadow:0 3px 8px #2636502b;cursor:grab;position:relative}.event .x{position:absolute;right:5px;top:3px;border:0;background:#ffffff35;color:#fff;padding:1px 5px;border-radius:50%}.event .ename{font-weight:750;padding-right:16px}.event .etime{font-size:11px;opacity:.9}.event.public{background:#3457c4}.event.professional{background:#8a43ae}.event.elective{background:#168267}.event.civic{background:#c36b13}.event.uncertain{background:#b34258}
+    .place{font-size:12px;font-weight:650;margin-top:5px;overflow-wrap:anywhere}.place .campus{display:inline-block;border-radius:4px;padding:1px 5px;margin-right:4px;background:#eaf0ff;color:#234787}.place .off-campus{background:#fff0d7;color:#8a4300}.course.used{opacity:.72}.event{overflow:auto}.event .place{font-size:11px;line-height:1.3}.event .campus{background:#fff;color:#172033}.event .off-campus{background:#ffe3a6;color:#702e00}
+    .legend{padding:10px 14px;color:var(--muted);border-top:1px solid var(--line);font-size:12px}.dot{display:inline-block;width:9px;height:9px;border-radius:2px;margin:0 4px 0 10px}.mobile-note{display:none}
+    dialog{width:min(620px,calc(100vw - 32px));border:0;border-radius:16px;padding:0;box-shadow:0 20px 70px #12213b55;color:var(--ink)}dialog::backdrop{background:#14203988;backdrop-filter:blur(2px)}.detail-head{padding:20px 22px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:16px}.detail-head h2{margin:0;font-size:21px}.detail-body{padding:18px 22px}.detail-body p{margin:8px 0}.detail-summary{font-size:15px;line-height:1.7;background:#f6f8fc;border-radius:11px;padding:14px}.detail-path{margin-top:14px;padding:12px 14px;border-left:3px solid var(--brand);background:#eef4ff}.detail-actions{padding:0 22px 20px;display:flex;gap:8px;justify-content:flex-end}.close-x{border:0;font-size:20px;padding:2px 8px}
+    @media print{header button,aside,.rules,.alerts,.x,.mobile-note{display:none!important}.layout{display:block;padding:0}.calendar-wrap{overflow:visible}.event{box-shadow:none;print-color-adjust:exact}.calendar{min-width:930px}}
+    @media(max-width:900px){.layout{grid-template-columns:1fr}aside.panel{position:static;max-height:45vh}.mobile-note{display:block;color:var(--warn)}}
+    body{background:radial-gradient(circle at top right,#e8efff 0,#f4f7fb 34%,#f4f7fb 100%)}
+    header{background:linear-gradient(135deg,#fff 0%,#f7f9ff 100%);box-shadow:0 4px 18px #1e31500d}
+    header h1{letter-spacing:-.02em}
+    header .sub{max-width:900px}
+    header button{transition:transform .15s ease,box-shadow .15s ease}
+    header button:hover,.course button:hover{transform:translateY(-1px);box-shadow:0 4px 10px #2457d622}
+    .panel{box-shadow:0 8px 24px #1e315014}
+    .rules{background:linear-gradient(90deg,#fff,#f8faff)}
+    .course button{margin-top:8px;padding:6px 9px;border-color:#b7c8f1;color:#214cae;background:#f5f8ff;border-radius:7px}
+    .course:focus-within{outline:3px solid #2457d633;outline-offset:1px}
+    .alert{padding:5px 8px;border-radius:7px}
+    .event{border:1px solid #ffffff55}
+  </style>
+</head>
+<body>
+<header><div><h1>CFI DIY 选课沙盘</h1><div class="sub">非官方选课辅助工具 · 2026–27第一学期 · SIS时间地点快照：2026-08-27。仅适用于CFI培养方案，开课及资格以学校最新通知为准。选择只保存在你的浏览器，不提交SIS。</div></div><div><button id="clear">清空</button> <button id="demo">打印课表</button></div></header>
+<main class="layout">
+  <aside class="panel"><h2>课程池</h2><p class="meta">部分班级快照，不代表全部可选课程。示意课表按周展示；指定周、TBA及跨学期课程需另查SIS。FIN6108跨两学期合计6分，统计并非本学期可获得学分。</p><div class="filters" id="filters"></div><div id="pool"></div></aside>
+  <section class="panel">
+    <div class="rules"><strong>约束规则</strong><label><input id="noMorning" type="checkbox" checked> 不要早课</label><label><input id="noSat" type="checkbox" checked> 不要周六</label><label title="仅用于沙盘提醒，不代表SIS正式注册上限">自定义学分预警线 <input id="maxCredits" type="number" value="20" min="3" max="40"></label><label><input id="strict" type="checkbox"> 偏好作为硬约束</label><div class="stats"><span class="stat">课程 <b id="count">0</b></span><span class="stat">学分 <b id="credits">0</b></span><span class="stat">课程数（非考试数） <b id="assessments">0</b></span></div></div>
+    <div class="alerts" id="alerts"></div><div class="calendar-wrap"><div class="mobile-note">手机上建议横屏拖动。</div><div class="calendar" id="calendar"></div></div>
+    <div class="legend"><span class="dot" style="background:#3457c4"></span>公共必修 <span class="dot" style="background:#8a43ae"></span>专业必修 <span class="dot" style="background:#168267"></span>官网明确选修 <span class="dot" style="background:#b34258"></span>计入方向待确认 <span class="dot" style="background:#c36b13"></span>国情教育必修</div>
+  </section>
+</main>
+<dialog id="detailDialog"><div class="detail-head"><div><h2 id="detailTitle"></h2><div class="sub" id="detailMeta"></div></div><button class="close-x" id="closeDetail" aria-label="关闭">×</button></div><div class="detail-body"><div class="detail-summary" id="detailSummary"></div><div class="detail-path"><strong>查看本学期完整大纲</strong><br>登录SIS → 课程管理 → 课程目录 → 浏览目录 → Finance → 选择课程 → 查看课程大纲。<br><span class="sub">本学期的考试、作业和展示权重以SIS中教师上传版本为准。</span></div></div><div class="detail-actions"><button id="copyCode">复制课程代码</button><button class="primary" id="openSis">打开SIS</button></div></dialog>
+<script>
+const courses=[
+ {id:'6104-4494',code:'FIN6104',name:'公司金融',type:'public',label:'公共必修',credits:3,day:1,start:'13:30',end:'16:20',section:'4494'},
+ {id:'6104-4495',code:'FIN6104',name:'公司金融',type:'public',label:'公共必修',credits:3,day:3,start:'15:00',end:'17:50',section:'4495'},
+ {id:'6123-4506',code:'FIN6123',name:'投资管理及分析',type:'public',label:'公共必修',credits:3,day:1,start:'09:00',end:'11:50',section:'4506'},
+ {id:'6123-4507',code:'FIN6123',name:'投资管理及分析',type:'public',label:'公共必修',credits:3,day:3,start:'09:00',end:'11:50',section:'4507'},
+ {id:'6123-4508',code:'FIN6123',name:'投资管理及分析',type:'public',label:'公共必修',credits:3,day:1,start:'19:00',end:'21:50',section:'4508'},
+ {id:'6101-4490',code:'FIN6101',name:'财务报表分析',type:'professional',label:'专业必修',credits:3,day:2,start:'09:00',end:'11:50',section:'4490'},
+ {id:'6101-4491',code:'FIN6101',name:'财务报表分析',type:'professional',label:'专业必修',credits:3,day:2,start:'14:00',end:'16:50',section:'4491'},
+ {id:'6116-4502',code:'FIN6116',name:'固定收益证券分析',type:'professional',label:'专业必修',credits:3,day:2,start:'09:00',end:'11:50',section:'4502'},
+ {id:'6116-4503',code:'FIN6116',name:'固定收益证券分析',type:'professional',label:'专业必修',credits:3,day:2,start:'14:00',end:'16:50',section:'4503'},
+ {id:'6131-4706',code:'FIN6131',name:'投资组合与资产管理',type:'professional',label:'专业必修',credits:3,day:5,start:'09:00',end:'11:50',section:'4706'},
+ {id:'6107-4497',code:'FIN6107',name:'宏观经济与金融市场',type:'elective',label:'官网明确选修',credits:3,day:5,start:'14:00',end:'16:50',section:'4497'},
+ {id:'6109-4499',code:'FIN6109',name:'行为金融',type:'elective',label:'官网明确选修',credits:3,day:4,start:'14:00',end:'16:50',section:'4499'},
+ {id:'6115-4500',code:'FIN6115',name:'市场微观结构与算法交易',type:'elective',label:'官网明确选修',credits:3,day:1,start:'19:00',end:'21:50',section:'4500',note:'T01(4501)时间TBA'},
+ {id:'6138-4710',code:'FIN6138',name:'数据可视化',type:'elective',label:'官网明确选修',credits:3,day:3,start:'19:00',end:'21:50',section:'4710',note:'另有时间待定的tutorial'},
+ {id:'6138-4711',code:'FIN6138',name:'数据可视化',type:'elective',label:'官网明确选修',credits:3,day:4,start:'18:30',end:'21:20',section:'4711',note:'另有时间待定的tutorial'},
+ {id:'6140-4734',code:'FIN6140',name:'绿色债券与ESG实践',type:'elective',label:'官网明确选修',credits:3,day:3,start:'19:00',end:'21:50',section:'4734'},
+ {id:'6103-4492',code:'FIN6103',name:'金融计量与应用',type:'elective',label:'官网明确选修',credits:3,day:6,start:'18:30',end:'21:20',section:'4492'},
+ {id:'6103-4493',code:'FIN6103',name:'金融计量与应用',type:'elective',label:'官网明确选修',credits:3,day:6,start:'13:00',end:'15:50',section:'4493'},
+ {id:'6108-4498',code:'FIN6108',name:'当代中国金融问题与挑战',type:'elective',label:'官网明确选修',credits:6,day:6,start:'19:00',end:'21:50',section:'4498',meetings:[{day:6,start:'19:00',end:'21:50'},{day:7,start:'19:00',end:'21:50'}],note:'连续两个学期合计6学分；当前快照为周六和周日晚上'},
+ {id:'6106-4496',code:'FIN6106',name:'量化投资组合分析',type:'elective',label:'官网明确选修',credits:3,day:4,start:'19:00',end:'21:50',section:'4496'},
+ {id:'6120-4889',code:'FIN6120',name:'金融风险管理',type:'elective',label:'培养方案选修',credits:3,day:2,start:'18:45',end:'21:35',section:'4889',note:'T01(4890)时间TBA'},
+ {id:'6126-4888',code:'FIN6126',name:'另类投资',type:'elective',label:'官网明确选修',credits:3,day:7,start:'09:00',end:'15:50',section:'4888',meetings:[{day:7,start:'09:00',end:'11:50'},{day:7,start:'13:00',end:'15:50'}],note:'仅SIS所列指定周日，上午和下午均上课'},
+ {id:'6203-4571',code:'FIN6203',name:'资产定价',type:'uncertain',label:'计入CFI待确认',credits:3,day:3,start:'09:00',end:'11:50',section:'4571',note:'T01(4572)时间TBA'},
+ {id:'6204-4573',code:'FIN6204',name:'金融实证方法',type:'uncertain',label:'计入CFI待确认',credits:3,day:2,start:'18:30',end:'21:20',section:'4573'},
+ {id:'6130-4705',code:'FIN6130',name:'金融科技与人工智能',type:'uncertain',label:'跨方向专业必修，可择一计选修',credits:3,day:4,start:'18:30',end:'21:20',section:'4705'},
+ {id:'6127-4613',code:'FIN6127',name:'金融科技理论与实践',type:'uncertain',label:'跨方向专业必修，可择一计选修',credits:3,day:1,start:'15:00',end:'17:50',section:'4613',note:'T01(4614)时间TBA'},
+ {id:'6301-4574',code:'FIN6301',name:'高级公司金融专题（一）',type:'uncertain',label:'计入CFI待确认',credits:3,day:4,start:'14:00',end:'16:50',section:'4574'},
+ {id:'6309-4570',code:'FIN6309',name:'行为金融经济学',type:'uncertain',label:'计入CFI待确认',credits:3,day:2,start:'14:00',end:'16:50',section:'4570'},
+ {id:'6313-4615',code:'FIN6313',name:'中国金融市场研究',type:'uncertain',label:'计入CFI待确认',credits:3,day:5,start:'14:30',end:'17:20',section:'4615'},
+ {id:'cec5000',code:'CEC5000',name:'国情教育：理论与实践',type:'civic',label:'国情教育必修',credits:2,day:5,start:'18:00',end:'19:50',section:'4659'},
+ {id:'cec5010',code:'CEC5010',name:'自然辩证法概论',type:'civic',label:'国情教育必修',credits:1,day:5,start:'20:00',end:'20:50',section:'4678'}
+];
+// Locations are keyed by class number, not course code: sections may use different campuses.
+const sectionLocations={
+ '4490':['龙岗','Teaching D Bldg 307'], '4491':['龙岗','BG04 Central Square'],
+ '4492':['西丽','XILI CAMPUS 6E506'], '4493':['龙岗','Teaching Complex B206'],
+ '4494':['龙岗','Teaching Complex C101'], '4495':['龙岗','Teaching Complex C301'],
+ '4496':['福田','Futian 1809'], '4497':['龙岗','Teaching Complex A402'],
+ '4498':['福田','Futian 1513'], '4499':['龙岗','Teaching Complex C203'],
+ '4500':['龙岗','Administration Bldg E205'], '4502':['龙岗','Teaching Complex C203'],
+ '4503':['龙岗','Zhi Xin Bldg 111'], '4506':['龙岗','Administration Bldg E210'],
+ '4507':['龙岗','Teaching D Bldg 208'], '4508':['龙岗','Teaching Complex D202'],
+ '4889':['福田','Futian 1809'], '4888':['福田','Futian 1809'],
+ '4613':['龙岗','Teaching Complex C301'], '4705':['龙岗','Administration Bldg E205'],
+ '4706':['西丽','XILI CAMPUS 6E506'], '4710':['龙岗','Teaching B Bldg 104'],
+ '4711':['龙岗','Teaching B Bldg 104'], '4734':['福田','Futian 1809'],
+ '4571':['龙岗','Teaching Complex B201'], '4573':['龙岗','Teaching A Bldg 307'],
+ '4574':['龙岗','Cheng Dao Bldg 208'], '4570':['龙岗','Teaching Complex B201'],
+ '4615':['龙岗','Teaching A Bldg 317']
+};
+for(const c of courses){
+ const location=sectionLocations[c.section] || (['CEC5000','CEC5010'].includes(c.code)?['龙岗','Teaching Complex C301']:['待确认','现有材料未确认教室，请查SIS']);
+ [c.campus,c.room]=location;
+}
+const courseDetails={
+ FIN6101:{url:'https://www.cuhk.edu.cn/zh-hans/course/15980',term:'最近公开：2025-26第一学期',summary:'财务报表分析与投资估值；股息折现、自由现金流、剩余收益、异常收益增长，以及P/E、P/B、PEG。'},
+ FIN6103:{url:'https://www.cuhk.edu.cn/zh-hans/course/15982',term:'最近公开：2025-26第一学期',summary:'金融计量与实证金融工具；单/多变量模型、时间序列、波动率和风险管理模型，并使用计算机分析金融数据。'},
+ FIN6104:{url:'https://www.cuhk.edu.cn/zh-hans/course/15983',term:'最近公开：2025-26第一学期',summary:'公司金融基础、现金流折现、资本成本与资本预算、DCF估值、资本结构、并购、股利政策和破产。'},
+ FIN6106:{url:'https://www.cuhk.edu.cn/zh-hans/course/15985',term:'最近公开：2025-26第一学期',summary:'Python量化投资组合管理；组合理论、Smart Beta、因子建模、风险优化、主动组合与动态对冲。'},
+ FIN6107:{url:'https://www.cuhk.edu.cn/zh-hans/course/15986',term:'最近公开：2025-26第二学期',summary:'宏观环境中的金融决策：金融市场功能、国民收入账户、利率与央行政策、银行体系和国际资本流动。'},
+ FIN6108:{url:'https://www.cuhk.edu.cn/zh-hans/course/15987',term:'最近公开：2025-26第二学期',summary:'中国金融热点；业界导师授课，包含课堂案例展示和项目研究，中文授课，6学分。'},
+ FIN6123:{url:'https://www.cuhk.edu.cn/zh-hans/course/15996',term:'最近公开：2025-26第一学期',summary:'投资管理理论与实践：风险收益、股票市场、资产配置、组合优化、因子模型和投资绩效评价。'},
+ FIN6126:{url:'https://www.cuhk.edu.cn/zh-hans/course/15979',term:'最近公开：2025-26第一学期',summary:'机构投资者视角的另类资产配置；对冲基金、私募股权、房地产和商品，结合中国市场案例，主要中文授课。'},
+ FIN6131:{url:'https://www.cuhk.edu.cn/zh-hans/course/16556',term:'最近公开：2025-26第二学期',summary:'现代组合与资产管理；股票估值、有效市场、资产配置、CAPM/APT、最优组合，以及组合构建项目和绩效展示。'},
+ CEC5000:{url:'https://www.cuhk.edu.cn/zh-hans/course/11756',term:'公开页：2023-24第二学期',summary:'新时代中国特色社会主义理论与实践，2学分，公开课程页显示为及格/不及格。'},
+ CEC5010:{url:'https://www.cuhk.edu.cn/zh-hans/course/16486',term:'最近公开：2025-26第二学期',summary:'自然观、科学观与技术观，讨论科学技术发展规律及其社会作用，1学分。'}
+};
+const days=['','周一','周二','周三','周四','周五','周六','周日']; let selected=[]; let filter='全部'; const $=s=>document.querySelector(s); const meetings=c=>c.meetings||[{day:c.day,start:c.start,end:c.end}];
+const mins=t=>{let[a,b]=t.split(':').map(Number);return a*60+b}; const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+function initCalendar(){let c=$('#calendar');c.innerHTML='<div></div>'+days.slice(1).map((d,i)=>`<div class="day" style="grid-column:${i+2};grid-row:1">${d}</div>`).join('');for(let i=0;i<28;i++){let t=8*60+i*30;c.insertAdjacentHTML('beforeend',`<div class="time" style="grid-column:1;grid-row:${i+2}">${i%2===0?String(Math.floor(t/60)).padStart(2,'0')+':00':''}</div>`);for(let d=1;d<=7;d++)c.insertAdjacentHTML('beforeend',`<div class="gridcell dropzone ${i%2?'':'hour'}" data-day="${d}" style="grid-column:${d+1};grid-row:${i+2}"></div>`)}c.addEventListener('dragover',e=>{e.preventDefault();e.target.closest('.dropzone')?.classList.add('dragover')});c.addEventListener('dragleave',e=>e.target.closest('.dropzone')?.classList.remove('dragover'));c.addEventListener('drop',e=>{e.preventDefault();document.querySelectorAll('.dragover').forEach(x=>x.classList.remove('dragover'));add(e.dataTransfer.getData('text/plain'))})}
+function renderFilters(){let fs=['全部','必修','官网选修','待确认'];$('#filters').innerHTML=fs.map(x=>`<button class="filter ${x===filter?'active':''}" data-f="${x}">${x}</button>`).join('');document.querySelectorAll('.filter').forEach(b=>b.onclick=()=>{filter=b.dataset.f;render()})}
+function visible(c){return filter==='全部'||filter==='必修'&&['public','professional','civic'].includes(c.type)||filter==='官网选修'&&c.type==='elective'||filter==='待确认'&&c.type==='uncertain'}
+function openDetail(c){let d=courseDetails[c.code]||{term:'暂无已核实大纲',summary:'请到SIS查询本学期课程大纲。'};$('#detailTitle').textContent=`${c.code} ${c.name}`;$('#detailMeta').textContent=`${c.label} · ${c.credits}学分 · ${c.campus} · ${c.room} · ${d.term}`;$('#detailSummary').textContent=d.summary;$('#detailDialog').dataset.code=c.code;$('#detailDialog').showModal()}
+function renderPool(){let used=new Set(selected.map(id=>courses.find(c=>c.id===id)?.code));$('#pool').innerHTML=`<div class="alert ok">拖入课程，或点击「加入课表」。双击卡片查看详情。</div>`+courses.filter(visible).map(c=>{let ms=meetings(c),schedule=ms.map(m=>`${days[m.day]} ${m.start}–${m.end}`).join('；'),d=courseDetails[c.code];return `<div class="course ${used.has(c.code)?'used':''} ${d?'has-detail':''}" draggable="true" data-id="${c.id}" title="${d?esc(d.summary+' '+d.term):'暂无课程详情'}"><div><span class="code">${c.code}</span> <span class="tag ${c.type==='elective'?'elective':c.type==='uncertain'?'uncertain':'required'}">${c.label}</span>${d?'<span class="detail-hint">双击详情</span>':''}</div><div class="name">${c.name}</div><div class="meta">${schedule} · ${c.credits}学分 · 班号 ${c.section}${c.note?' · '+c.note:''}${d?' · '+d.term:''}</div></div>`}).join('');document.querySelectorAll('.course').forEach(x=>{x.ondragstart=e=>e.dataTransfer.setData('text/plain',x.dataset.id);x.ondblclick=()=>{let c=courses.find(c=>c.id===x.dataset.id);if(c)openDetail(c)}})}
+function add(id){let c=courses.find(x=>x.id===id);if(!c)return;let old=selected.find(x=>courses.find(y=>y.id===x)?.code===c.code);if(old){if(old===id)return;/* Preserve old section until replacement passes validation. */}let clash=selected.filter(id=>id!==old).map(x=>courses.find(y=>y.id===x)).find(x=>meetings(x).some(a=>meetings(c).some(b=>a.day===b.day&&mins(a.start)<mins(b.end)&&mins(b.start)<mins(a.end))));let hard=$('#strict').checked&&((meetings(c).some(m=>m.start<'12:00')&&$('#noMorning').checked)||(meetings(c).some(m=>m.day===6)&&$('#noSat').checked));if(clash||hard){flash(clash?`不能加入：与 ${clash.code} ${clash.name} 时间冲突`:`不能加入：当前已把偏好设为硬约束`,'bad');return}selected=selected.filter(x=>x!==old);selected.push(id);save();render()}
+function remove(id){selected=selected.filter(x=>x!==id);save();render()}
+function renderEvents(){document.querySelectorAll('.event').forEach(x=>x.remove());for(let id of selected){let c=courses.find(x=>x.id===id);for(let [i,m] of meetings(c).entries()){let start=mins(m.start),end=mins(m.end),row=Math.floor((start-480)/30)+2,span=Math.max(1,Math.ceil((end-start)/30));let el=document.createElement('div');el.className=`event ${c.type}`;el.style.gridColumn=String(m.day+1);el.style.gridRow=`${row} / span ${span}`;el.innerHTML=`${i===0?'<button class="x" title="移除">×</button>':''}<div class="ename">${c.code} ${esc(c.name)}</div><div class="etime">${m.start}–${m.end}<br>${c.label} · ${c.credits}学分</div>`;el.querySelector('.x')?.addEventListener('click',()=>remove(id));$('#calendar').appendChild(el)}}}
+function checks(){let cs=selected.map(id=>courses.find(c=>c.id===id)),credits=cs.reduce((a,c)=>a+c.credits,0),msgs=[];if(cs.some(c=>meetings(c).some(m=>m.start<'12:00'))&&$('#noMorning').checked)msgs.push(['warn','包含早课（当前是偏好提醒）']);if(cs.some(c=>meetings(c).some(m=>m.day===6))&&$('#noSat').checked)msgs.push(['warn','包含周六课程（当前是偏好提醒）']);if(credits>+$('#maxCredits').value)msgs.push(['warn',`超过你设置的 ${$('#maxCredits').value} 学分预警线（不代表SIS正式上限）`]);if(cs.some(c=>c.type==='uncertain'))msgs.push(['warn','含“计入方向待确认”课程，选前请向项目组确认']);if(cs.some(c=>c.note?.includes('TBA')))msgs.push(['warn','部分课程另有 TBA tutorial，时间公布后需重新检查冲突']);if(cs.some(c=>c.code==='FIN6108'))msgs.push(['warn','FIN6108在SIS显示周六、周日晚上均有课']);if(!msgs.length)msgs.push(['ok','当前方案没有发现时间冲突或规则问题']);$('#alerts').innerHTML=msgs.map(([k,v])=>`<div class="alert ${k}">● ${v}</div>`).join('');$('#count').textContent=cs.length;$('#credits').textContent=credits;$('#assessments').textContent=cs.length}
+function placeHTML(c){return `<div class="place"><span class="campus ${['福田','西丽'].includes(c.campus)?'off-campus':''}">${esc(c.campus)}</span>${esc(c.room)}</div>`}
+function renderLocations(){
+ document.querySelectorAll('#pool .course').forEach(el=>{const c=courses.find(c=>c.id===el.dataset.id);el.insertAdjacentHTML('beforeend',placeHTML(c));const btn=document.createElement('button');btn.textContent='加入课表';btn.onclick=e=>{e.stopPropagation();add(c.id)};el.appendChild(btn)});
+ let eventIndex=0;const events=[...document.querySelectorAll('.event')];
+ for(const id of selected){const c=courses.find(c=>c.id===id);for(const m of meetings(c)){const el=events[eventIndex++];el.insertAdjacentHTML('beforeend',placeHTML(c));el.title=`${c.code} ${c.name}｜${days[m.day]} ${m.start}–${m.end}｜${c.campus} · ${c.room}`}}
+}
+function flash(msg,k){$('#alerts').innerHTML=`<div class="alert ${k}">● ${msg}</div>`;setTimeout(checks,2300)}function save(){localStorage.setItem('cfiPlannerPublicV1',JSON.stringify(selected))}function render(){renderFilters();renderPool();renderEvents();renderLocations();checks()}
+$('#closeDetail').onclick=()=>$('#detailDialog').close();$('#detailDialog').onclick=e=>{if(e.target===$('#detailDialog'))$('#detailDialog').close()};$('#copyCode').onclick=async()=>{let code=$('#detailDialog').dataset.code;try{await navigator.clipboard.writeText(code);$('#copyCode').textContent='已复制';setTimeout(()=>$('#copyCode').textContent='复制课程代码',1200)}catch{$('#copyCode').textContent=code}};$('#openSis').onclick=()=>window.open('https://sis.cuhk.edu.cn','_blank','noopener');
+['noMorning','noSat','maxCredits','strict'].forEach(id=>$('#'+id).onchange=render);$('#clear').onclick=()=>{selected=[];save();render()};$('#demo').onclick=()=>window.print();
+const legacyIds={'6107':'6107-4497','6108':'6108-4498','6109':'6109-4499','6115':'6115-4500','6103':'6103-4492','6120':'6120-4889','6204':'6204-4573','6130':'6130-4705','6127':'6127-4613','6140':'6140-4734'};
+try{const stored=JSON.parse(localStorage.getItem('cfiPlannerPublicV1')||'[]');selected=Array.isArray(stored)?[...new Set(stored)].filter(id=>courses.some(c=>c.id===id)):[]}catch{selected=[]} initCalendar();render();
+</script>
+</body></html>
