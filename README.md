@@ -1,49 +1,50 @@
-# CFI DIY Course Planner
+# 选课沙盘
 
-一个无需构建的静态选课沙盘，用来把课程班次、时间、校区和个人偏好放在同一张周课表里检查。
+换一个班，整张课表还成不成立？这比把课程列出来麻烦得多。
 
-## 功能
+这个小工具把班次、学分、地点和时间偏好放到一张周课表上。先试排，再回学校系统操作。打开网页就能用，不需要注册。
 
-- 从课程池拖拽或点击加入课表，支持同一课程的班次替换
-- 检查时间冲突、早课、周六课程、学分预警、TBA 和培养方向待确认项
-- 显示班号、校区、教室和已整理的公开课程简介
-- 选择保存在浏览器 `localStorage`，支持清空和打印课表
-- 通过官方 SIS 链接回到正式系统；本工具不会提交选课或退课
+![三门课组成的试排课表](assets/planner.jpg)
 
-## 快速运行
+*截图临时选了三门课，共 9 学分。早课设为「尽量避免」后，周二的课仍能保留，只给出提醒。截图不是个人实际课表。*
 
-本项目没有 npm 依赖。进入仓库目录后运行：
+## 可以试试
 
-```bash
+- 拖一门课到课表，或点击「加入课表」。换同一门课的班次时，不会重复计算学分。
+- 加入一门时间重叠的课。系统会拒绝这次变更，并保留原来的安排。
+- 把早课、周六从软偏好改成硬限制，比较哪些选择还能留下。
+- 双击课程池里的课程，看课程说明、资料日期和待确认事项。
+
+![课程详情](assets/course-detail.jpg)
+
+*课程介绍能帮助选课，但不能代替本学期大纲。详情里把历史资料和需要去 SIS 确认的内容分开。*
+
+## 为什么这样做
+
+没有给所有课程算一个「最优分数」。有人愿意早起，有人更想空出整天；先把冲突和代价摆出来，让人自己取舍。
+
+偏好和冲突也不是一回事。「尽量不要早课」可以让步，两门课同时上却不能靠提醒解决。修改方案时，先检查新方案，再替换旧方案，避免换班失败后把原来的课也弄丢。
+
+状态保存在浏览器里。这省掉了账号和服务端，代价是不能自动跨设备同步，清理浏览器数据也会丢失方案。[实现中的几个取舍](docs/decisions.md)记录了这些决定。
+
+## 本地打开
+
+直接打开 `index.html`，或在仓库目录运行：
+
+```sh
 python3 -m http.server 8080
 ```
 
-然后打开 <http://localhost:8080/>。也可以直接打开 `index.html`，但本地静态服务器更适合测试浏览器存储和复制课程代码功能。
+然后访问 `http://localhost:8080`。规则检查：
 
-运行静态检查：
-
-```bash
+```sh
 node check-planner.cjs
 ```
 
-检查脚本会验证 HTML/JavaScript 语法、课程数量、地点完整性、重复课程处理、冲突拒绝、早课硬约束和公开版本隐私边界。
+## 还没解决的部分
 
-## 数据边界
+课程数据是 **2026-08-27 的历史快照**，不是实时余量；选课资格、考试安排和最终报名结果仍要查学校系统。TBA、部分周次和跨学期课程也不能简单当成每周固定时段。
 
-页面使用 2026-08-27 整理的历史课程时间与地点快照，并引用公开课程页面的简介。它不是 SIS 的实时接口，也不代表当前学期的完整课程池、容量、资格或最终教室安排。正式选课前请以学校最新 SIS 和通知为准。
+下一步更值得做的是把日期区间和课程数据拆出来，以及计算跨校区的通勤间隔。现在的周视图还不能完整处理这些情况。
 
-页面不要求登录，不读取账号、Cookie 或凭证；课表选择只保存在当前浏览器中。它是规划工具，不是正式注册工具。
-
-## English
-
-CFI DIY Course Planner is a zero-build static prototype for comparing course sections, meeting times, campuses, rooms, and personal planning preferences on a weekly calendar.
-
-It supports drag-and-drop planning, section replacement, conflict checks, morning/Saturday preferences, credit warnings, TBA and uncertain-requirement alerts, local browser storage, printing, and a link back to the official SIS. It never submits enrollment actions.
-
-The included data is a historical snapshot prepared on 2026-08-27, supplemented with public course-page summaries. It is not a live SIS integration and must not be treated as an authoritative source for current enrollment. No login, cookies, credentials, or personal notes are included.
-
-## 验证与贡献
-
-发布检查通过核心规则测试，并在浏览器中验证加入课程后课表和学分同步更新。项目使用 Codex 辅助开发，聚焦课程约束建模、可解释提示和浏览器本地交互。
-
-原创代码使用 MIT License；学校课程信息及链接的权利归其各自权利人。
+项目使用 Codex 辅助开发与整理。代码使用 MIT License；课程资料权利归原提供方。
